@@ -1,0 +1,369 @@
+ansible group1 -b -m service -a "name=httpd state=started"
+ansible group1 -b -m yum -a "name=httpd state=present"
+ansible group1c-b -m copy -a "name=copy src=/tmp/index.html dest=/var/www/html/index.html"
+
+
+ansible group2 -b -m yum -a "name=tomcat state=present"
+ansible group2 -b -m service -a "name=tomcat state=started"
+ansible group2 -b -m get_url -a "url=https://www.oracle.com/webfolder/technetwork/tutorials/obe/fmw/wls/12c/03-DeployApps/files/benefits.war dest=/usr/share/tomcat/webapps/benefits.war"
+
+
+https://www.oracle.com/webfolder/technetwork/tutorials/obe/fmw/wls/12c/03-DeployApps/files/benefits.war
+/usr/share/tomcat/webapps/
+
+get_url:
+    url: http://example.com/path/file.conf
+    dest: /etc/foo.conf
+- name: Copy file with owner and permissions
+  copy:
+    src: /srv/myfiles/foo.conf
+    dest: /etc/foo.conf
+
+
+ansible group1 -b -m replace -a ""path=/tmp/xyz.conf regexp="version=1.1" replace="version=1.2""
+
+
+install webser
+---
+- hosts: group1
+  tasks:
+  - name: installing webserver
+    yum:
+      name: httpd
+      state: present
+  - name: starting the service
+    service: name=httpd state=started
+  - name: copying index file
+    copy:
+      src: /tmp/index.html
+      dest: /var/www/html/index.html
+
+
+install tomcat
+---
+- hosts: group1
+  tasks:
+  - name: install tomcat
+    yum:
+      name: tomcat
+      state: present
+  - name: start tomcat service
+    service: name=tomcat state=started
+  - name: download war
+    get_url:
+      url: https://www.oracle.com/webfolder/technetwork/tutorials/obe/fmw/wls/12c/03-DeployApps/files/benefits.war
+      dest: /usr/share/tomcat/webapps/benefits.war
+
+
+?	yum install java -y                			  //installing java
+?	wget http://mirrors.estointernet.in/apache/tomcat/tomcat-9/v9.0.29/bin/apache-tomcat-9.0.29.tar.gz -P /opt    //dwnld tomcat s/w
+?	tar -xzvf /opt/apache-tomcat-9.0.29.tar.gz -C /opt/
+        //extract the tar file
+?	/opt/apache-tomcat-9.0.29/bin/startup.sh
+// find the start/stop scripts and to find the deployment dir
+?	wget https://www.oracle.com/webfolder/technetwork/tutorials/obe/fmw/wls/12c/12_1_3/03/apps/benefits.war -P /opt/apache-tomcat-9.0.29/webapps
+
+
+---
+- hosts: group2
+  tasks:
+  - name: install java
+    yum:
+      name: java
+      state: present
+  - name: download tomcat9
+    get_url:
+      url: http://mirrors.estointernet.in/apache/tomcat/tomcat-9/v9.0.30/bin/apache-tomcat-9.0.30.tar.gz
+      dest: /opt/apache-tomcat-9.0.29.tar.gz
+  - name: extract
+    unarchive:
+      src: /opt/apache-tomcat-9.0.29.tar.gz
+      dest: /opt
+      remote_src: yes
+  - name: execute start command
+    command: /opt/apache-tomcat-9.0.29/bin/startup.sh
+  - name: download war file
+    get_url:
+      url: https://www.oracle.com/webfolder/technetwork/tutorials/obe/fmw/wls/12c/12_1_3/03/apps/benefits.war
+      dest: /opt/apache-tomcat-9.0.29/webapps/benefits.war
+
+
+
+yum install java-1.8.0-openjdk
+java --version
+cd /opt
+wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-6.0.zip
+unzip sonarqube-6.0.zip
+mv sonarqube-6.0 sonarqube
+cd /opt/sonarqube/bin/linux-x86-64 
+/opt/sonarqube/bin/linux-x86-64/sonar.sh start
+
+
+---
+- hosts: group1   
+  tasks:
+  - name: install java
+    yum:
+      name: java-1.8.0-openjdk
+      state: present
+  - name: download sonarqube
+    get_url:
+      url: https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-6.0.zip
+      dest: /opt/sonarqube-6.0.zip
+  - name: unzip sonarqube
+    unarchive:
+      src: /opt/sonarqube-6.0.zip
+      dest: /opt
+      remote_src: yes
+  - name: rename foler
+    command: mv /opt/sonarqube-6.0 /opt/sonarqube
+  - name: start sonarqube
+    command: /opt/sonarqube/bin/linux-x86-64/sonar.sh start
+
+
+---
+- hosts: group1
+  vars:
+    pkg_name=httpd
+    pkg_state=present
+  tasks
+    - name: install{{pkg_name}}
+      yum: name={{pkg_name}} state={{pkg_state}}
+
+
+
+
+=================================
+
+---
+- hosts: group2
+  vars:
+    pkg_name: java-1.8.0-openjdk
+    pkg_state: present
+    url: 'https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-6.0.zip'
+    url_dest: '/opt/sonarqube-6.0.zip'
+    src: '/opt/sonarqube-6.0.zip'
+    dest: '/opt'
+    command1: 'mv /opt/sonarqube-6.0 /opt/sonarqube'
+    command2: '/opt/sonarqube/bin/linux-x86-64/sonar.sh start'
+  tasks:
+  - name: install {{pkg_name}}
+    yum:
+      name: '{{pkg_name}}'
+      state: '{{pkg_state}}'
+  - name: download sonarqube
+    get_url:
+      url: '{{url}}'
+      dest: '{{url_dest}}'
+  - name: unzip sonarqube
+    unarchive:
+      src: '{{src}}'
+      dest: '{{dest}}'
+      remote_src: yes
+  - name: rename foler
+    command: '{{command1}}'
+  - name: start sonarqube
+    command: '{{command2}}'
+
+---
+- hosts: all
+  tasks:
+  - name: Template a file to /tmp/xyz.conf
+    template:
+      src: xyz.j2
+      dest: /tmp/xyz.conf
+
+------------
+
+---
+- hosts: all
+  tasks: 
+  - name: install httpd
+    yum: name=https state=present
+    when: ansible_os_family=='Redhat'
+  - name: install apache2
+    apt: name=apache2 state=present
+    when: ansible_os_family=='Debian'
+
+=============
+
+---
+- hosts: group1
+  roles:
+    - tomcat_role
+    - java_role
+
+
+  - name: install tomcat
+    yum:
+      name: tomcat
+      state: present
+  - name: start tomcat service
+    service: name=tomcat state=started
+  - name: download war
+    get_url:
+      url: https://www.oracle.com/webfolder/technetwork/tutorials/obe/fmw/wls/12c/03-DeployApps/files/benefits.war
+      dest: /usr/share/tomcat/webapps/benefits.war
+
+===================================
+
+1. Install pre requisites
+sudo yum install firewalld
+sudo service firewalld start
+sudo systemctl enable firewalld
+python2-PyMySQL
+
+- name: install firewalld
+  yum: name=firewalld state=present
+- name: start firewalld
+  service: name= firewalld state=started
+- name: enable firewalld
+  systemd: name=firewalld enabled=yes
+- name: enable firewalld
+  yum: name=PyMySQL enabled=yes
+
+
+2. Install mysql db
+sudo yum install mariadb-server
+sudo vi /etc/my.cnf
+sudo service mariadb start
+sudo systemctl enable mariadb
+
+- name: install mariadb
+  yum: name=mariadb-server state=present
+- name: start mariadb
+  service: name= mariadb state=started
+- name: enable mariadb
+  systemd: name=mariadb enabled=yes
+
+3. Firewall for db
+sudo firewall-cmd --permanent --zone=public --add-port=3306/tcp
+sudo firewall-cmd --reload
+
+- name: open firewall for db
+  firewalld:
+    port: 3306/tcp
+    permanent: yes
+    zone: public
+    state: enabled
+- name:  firewall reload
+  command: firewall-cmd --reload
+
+4. Configure Database
+$ mysql
+MariaDB > CREATE DATABASE ecomdb;
+MariaDB > CREATE USER 'ecomuser'@'localhost' IDENTIFIED BY 'ecompassword';
+MariaDB > GRANT ALL PRIVILEGES ON *.* TO 'ecomuser'@'localhost';
+MariaDB > FLUSH PRIVILEGES;
+
+- name: Create a new database with name ecomdb
+  mysql_db:
+    name: ecomdb
+    state: present
+- name: Create database user with password and all database privileges and 'WITH GRANT OPTION'
+  mysql_user:
+    name: ecomuser
+    password: ecompassword
+    priv: '*.*:ALL,GRANT'
+    state: present
+
+5. Load Product Inventory Information to database
+mysql < db-load-script.sql
+
+- name: Import DB 
+  shell: mysql ecomdb < db-load-script.sql
+
+Deploy and Configure Web
+
+6. Install required packages
+
+sudo yum install -y httpd php php-mysql
+sudo firewall-cmd --permanent --zone=public --add-port=80/tcp
+sudo firewall-cmd --reload
+
+- name: install php
+  vars:
+    packages:
+      - httpd
+      - php
+      - php-mysql
+  yum: 
+    name: '{{item}}' 
+    state: present
+    loop: '{{packages}}'
+- name: open firewall for db
+  firewalld:
+    port: 80/tcp
+    permanent: yes
+    zone: public
+- name:  firewall reload
+  command: firewall-cmd --reload
+
+
+7. Configure httpd
+
+Change DirectoryIndex index.html to DirectoryIndex index.php to make the php page the default page
+
+sudo vi /etc/httpd/conf/httpd.conf
+
+- name: replace http.conf
+  replace:
+  path: /etc/httpd/conf/httpd.conf
+  regexp: "DirectoryIndex index.html"
+  replace: "DirectoryIndex index.php"
+
+8. Start httpd
+sudo service httpd start
+sudo systemctl enable httpd
+
+- name: start httpd
+  service: 
+    name: httpd 
+    state: started
+- name: enable httpd
+  systemd: 
+    name: httpd 
+    enabled: yes
+
+
+
+
+9. Download code
+
+sudo yum install -y git
+git clone https://github.com/kodekloudhub/learning-app-ecommerce.git /var/www/html/
+
+- name: install git
+  yum: 
+    name: git 
+    state: present
+- name: git clone
+  git:
+    repo: https://github.com/kodekloudhub/learning-app-ecommerce.git
+    dest: /var/www/html/
+    clone: yes
+- name: copy index to templates
+  get_url:
+  
+
+
+10. Update index.php
+
+Update index.php file to connect to the right database server. In this case localhost since the database is on the same server.
+
+              <?php
+                        $link = mysqli_connect('172.20.1.101', 'ecomuser', 'ecompassword', 'ecomdb');
+                        if ($link) {
+                        $res = mysqli_query($link, "select * from products;");
+                        while ($row = mysqli_fetch_assoc($res)) { ?>
+ON a multi-node setup remember to provide the IP address of the database server here.
+
+  - name: Template a file to /tmp/xyz.conf
+    template:
+      src: index.j2
+      dest: /var/www/html/index.php
+
+Test
+curl http://localhost
+
+
